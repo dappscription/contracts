@@ -11,6 +11,8 @@ interface IRegistry {
   struct Plan {
     /// @notice owner that's allow to update plan details
     address owner;
+    /// @notice payment recipient
+    address recipient;
     /// @notice ERC20 token address used as payment token
     address paymentToken;
     /// @notice how long the plan will be enabled for each payment.
@@ -34,7 +36,7 @@ interface IRegistry {
   }
 
   /// @notice create a new plan 
-  function createPlan(address _paymentToken, uint40 _period, uint128 _price) external returns (uint128 planId);
+  function createPlan(address _paymentToken, address _recipient, uint40 _period, uint128 _price) external returns (uint128 planId);
 
   // /// @notice update the plan detail. This will not affect existing users.
   // function updatePlan() external;

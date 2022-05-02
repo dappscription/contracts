@@ -18,12 +18,14 @@ contract Registry is IRegistry{
 
     function createPlan(
         address _paymentToken,
+        address _recipient,
         uint40 _period,
         uint128 _price
     ) external override returns (uint128) {
         uint128 id = nextPlanId;
         plans[id] = IRegistry.Plan({
             owner: msg.sender,
+            recipient: _recipient,
             paymentToken: _paymentToken,
             period: _period,
             lastModifiedTimestamp: uint40(block.timestamp),
