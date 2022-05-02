@@ -21,19 +21,17 @@ contract Registry is IRegistry{
         uint40 _period,
         uint128 _price
     ) external override returns (uint128) {
-        IRegistry.Plan memory plan = IRegistry.Plan({
+        uint128 id = nextPlanId;
+        plans[id] = IRegistry.Plan({
             owner: msg.sender,
             paymentToken: _paymentToken,
             period: _period,
             lastModifiedTimestamp: uint40(block.timestamp),
             price: _price
         });
-        uint128 id = nextPlanId;
-
-        plans[id] = plan;
 
         nextPlanId++;
-
+        emit IRegistry.PlanCreated(id, msg.sender, _paymentToken, _period, _price);
         return id;
     }
 }

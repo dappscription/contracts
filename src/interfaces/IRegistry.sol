@@ -5,6 +5,8 @@ interface IRegistry {
 
   error Subscription_Ongoing();
 
+  event PlanCreated(uint256 id, address owner, address token, uint40 period, uint128 price);
+
   ///@dev any projects can register new plans for people to subscribe
   struct Plan {
     /// @notice owner that's allow to update plan details
