@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.13;
+
+import "solmate/tokens/ERC721.sol";
+import "../interfaces/IRegistry.sol";
+
+contract Registry is IRegistry{
+    
+    uint128 public nextPlanId;
+    
+    uint256 public nextSubscriptionId;
+    
+    ///@dev planId => Plan struct
+    mapping(uint128 => IRegistry.Plan) public plans;
+
+    ///@dev subscriptions
+    mapping(uint256 => IRegistry.Subscription) public subs ;
+
+    function createPlan(
+        address _paymentToken,
+        uint40 _period,
+        uint128 _price
+    ) external override returns (uint128) {
+        IRegistry.Plan memory plan = IRegistry.Plan({
+            owner: msg.sender,
+            paymentToken: _paymentToken,
+            period: _period,
+            lastModifiedTimestamp: uint40(block.timestamp),
+            price: _price
+        });
+        uint128 id = nextPlanId;
+
+        plans[id] = plan;
+
+        nextPlanId++;
+
+        return id;
+    }
+}
