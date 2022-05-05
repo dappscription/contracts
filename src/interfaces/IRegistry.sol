@@ -7,6 +7,8 @@ interface IRegistry {
 
   event PlanCreated(uint256 id, address owner, address token, uint40 period, uint128 price);
 
+  event Subscribed(uint256 planId, uint256 subscriptionId, address subscriber, uint40 validUntil, bool allowAutoRenew);
+
   ///@dev any projects can register new plans for people to subscribe
   struct Plan {
     /// @notice owner that's allow to update plan details
@@ -41,10 +43,8 @@ interface IRegistry {
   // /// @notice update the plan detail. This will not affect existing users.
   // function updatePlan() external;
 
-  // /// @notice pay the token, and recive a new subscription NFT.
-  // /// @dev this function will also be used to renew a subscription.
-  // /// @dev this function will throw an Subscription_Ongoing error if the there's an existing subscription
-  // function subscribe(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId);
+  /// @notice pay the token, and recive a new subscription NFT.
+  function subscribe(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId);
 
   // /// @notice user can update auto renew preference. Disabling it is consiered "unsubscribed".
   // function updateSubscription(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId);
