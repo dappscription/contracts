@@ -129,6 +129,51 @@ contract TestContract is Test {
         vm.stopPrank();
     }
 
+    // test that we can extend our subscription before expires
+    function testRenewExtendable() public {
+        address recipient = users[1];
+        bool extendable = true;
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, extendable);
+        address payable alice = users[2];
+        // mint 2x price because we want to renew
+        usdc.mint(alice, price * 2);
+
+        vm.startPrank(alice);
+        usdc.approve(address(registry), price * 2);
+        uint256 nftId = registry.subscribe(planId, true);
+        (,,uint256 validUntilBefore,) = registry.subs(nftId);
+
+        registry.renew(nftId);
+        (,,uint256 validUntilAfter,) = registry.subs(nftId);
+        assertEq(validUntilAfter - validUntilBefore, period);
+        vm.stopPrank();
+    }
+
+    // test that we can extend our subscription after expires
+    function testRenewNotExtendable() public {
+        address recipient = users[1];
+        bool extendable = false;
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, extendable);
+        address payable alice = users[2];
+        // mint 2x price because we want to renew
+        usdc.mint(alice, price * 2);
+
+        vm.startPrank(alice);
+        usdc.approve(address(registry), price * 2);
+        uint256 nftId = registry.subscribe(planId, true);
+        (,,uint256 deadline,) = registry.subs(nftId);
+
+        vm.expectRevert(Registry.SubscriptionNotExpired.selector);
+        registry.renew(nftId);
+        
+        // set time to expiration
+        vm.warp(deadline);
+        registry.renew(nftId);
+        (,,uint256 newDeadline,) = registry.subs(nftId);
+        assertEq(newDeadline, block.timestamp + period);
+        vm.stopPrank();
+    }
+
     function testCannotSubscribeNonExistantPlan(uint128 id) public {
         vm.expectRevert(Registry.ProjectDoesNotExist.selector);
         registry.subscribe(id, true);
