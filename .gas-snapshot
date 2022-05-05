@@ -1,1 +1,2 @@
-TestContract:testCreatePlan() (gas: 123531)
+TestContract:testCreate() (gas: 132651)
+TestContract:testSubscribe() (gas: 295721)
