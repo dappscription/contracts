@@ -66,7 +66,7 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
         nextSubId++;
 
         // pay the token amount to owner
-        IERC20(plan.paymentToken).safeTransferFrom(msg.sender, plan.owner, plan.price);
+        IERC20(plan.paymentToken).safeTransferFrom(msg.sender, plan.recipient, plan.price);
 
         // mint receipt (NFT to user)
         _mint(msg.sender, tokenId);

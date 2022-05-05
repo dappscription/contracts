@@ -16,6 +16,9 @@ contract TestContract is Test {
     Utilities internal utils;
     address payable[] internal users;
 
+    uint128 price = 100e6;
+    uint40 period = 90 days;
+
     function setUp() public {
         utils = new Utilities();
         users = utils.createUsers(5);
@@ -24,10 +27,9 @@ contract TestContract is Test {
         usdc = new MintableERC20();
     }
 
-    function testCreatePlanAndSubscribe() public {
+    function testCreate() public {
         address recipient = users[1];
-        uint128 price = 100e6;
-        uint40 period = 90 days;
+        
         uint128 expectedId = registry.nextPlanId();
 
         uint128 id = registry.createPlan(address(usdc), recipient, period, price);
@@ -40,17 +42,24 @@ contract TestContract is Test {
         assertEq(_period, period);
         assertEq(_lastModifiedTimestamp, block.timestamp);
         assertEq(_price, price);
+    }
 
-        // subscribe to plan
+    function testSubscribe() public {
+        address recipient = users[1];
+        uint128 id = registry.createPlan(address(usdc), recipient, period, price);
         address payable alice = users[2];
         usdc.mint(alice, price);
+
         vm.startPrank(alice);
         usdc.approve(address(registry), price);
-        
         uint256 nftId = registry.subscribe(id, true);
+        vm.stopPrank();
+
         assertEq(registry.ownerOf(nftId), alice);
 
-        vm.stopPrank();
+        // assert transfer has been made
+        assertEq(usdc.balanceOf(alice), 0);
+        assertEq(usdc.balanceOf(recipient), price);
     }
 
     function testCannotSubscribeNonExistantPlan(uint128 id) public {
