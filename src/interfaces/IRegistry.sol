@@ -5,9 +5,11 @@ interface IRegistry {
 
   error Subscription_Ongoing();
 
-  event PlanCreated(uint256 id, address owner, address token, uint40 period, uint128 price);
+  event PlanCreated(uint128 planId, address owner, address token, uint40 period, uint128 price);
 
-  event Subscribed(uint256 planId, uint256 subscriptionId, address subscriber, uint40 validUntil, bool allowAutoRenew);
+  event Subscribed(uint128 planId, uint256 subscriptionId, address subscriber, uint128 price, uint40 validUntil, bool allowAutoRenew);
+
+  event SubcriptionRenewed(uint256 planId, uint256 subscriptionId, address payer, uint128 price, uint40 validUntil);
 
   ///@dev any projects can register new plans for people to subscribe
   struct Plan {
@@ -23,6 +25,8 @@ interface IRegistry {
     uint40 lastModifiedTimestamp;
     /// @notice price for 1 period, denomicated in paymentToken
     uint128 price;
+    /// @notice can people extend the subscription before expiration
+    bool extentable;
   }
 
   /// @notice each 'subscription' is stored as ERC721 that can be transferable to new addresses.
@@ -41,13 +45,17 @@ interface IRegistry {
   function hasValidSubscription(uint128 _planId, address _user) external returns (bool _valid, uint256 _subId);
 
   /// @notice create a new plan 
-  function createPlan(address _paymentToken, address _recipient, uint40 _period, uint128 _price) external returns (uint128 planId);
+  function createPlan(address _paymentToken, address _recipient, uint40 _period, uint128 _price, bool _extentable) external returns (uint128 planId);
 
   // /// @notice update the plan detail. This will not affect existing users.
   // function updatePlan() external;
 
   /// @notice pay the token, and recive a new subscription NFT.
   function subscribe(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId);
+
+  /// @notice extend the subscription after expired.
+  /// @param _subId subscription id
+  function renew(uint256 _subId) external;
 
   // /// @notice user can update auto renew preference. Disabling it is consiered "unsubscribed".
   // function updateSubscription(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId);

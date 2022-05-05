@@ -11,6 +11,7 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
 
     error ProjectDoesNotExist();
     error AlreadySubscribed();
+    error SubscriptionNotExpired();
     error IllegalRebind();
 
     using SafeERC20 for IERC20;
@@ -46,7 +47,8 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
         address _paymentToken,
         address _recipient,
         uint40 _period,
-        uint128 _price
+        uint128 _price,
+        bool _extentable
     ) external override returns (uint128) {
         uint128 id = nextPlanId;
         plans[id] = IRegistry.Plan({
@@ -55,7 +57,8 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
             paymentToken: _paymentToken,
             period: _period,
             lastModifiedTimestamp: uint40(block.timestamp),
-            price: _price
+            price: _price,
+            extentable: _extentable
         });
 
         nextPlanId++;
@@ -86,13 +89,34 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
 
         nextSubId++;
 
-        // pay the token amount to owner
+        // pay the token amount to recipient
         IERC20(plan.paymentToken).safeTransferFrom(msg.sender, plan.recipient, plan.price);
 
         // mint receipt (NFT to user)
         _mint(msg.sender, subId);
 
-        emit IRegistry.Subscribed(_planId, subId, msg.sender, validUntil, _autoRenew);
+        emit IRegistry.Subscribed(_planId, subId, msg.sender, plan.price, validUntil, _autoRenew);
+    }
+
+    /// @inheritdoc IRegistry
+    function renew(uint256 _subId) external {
+        IRegistry.Subscription memory sub = subs[_subId];
+        IRegistry.Plan memory plan = plans[sub.planId];
+
+        uint40 currentTimestamp = uint40 (block.timestamp);
+        if (!plan.extentable && currentTimestamp < sub.validUntil) revert SubscriptionNotExpired();
+        
+        uint40 newValidUntil = currentTimestamp > sub.validUntil 
+            ? currentTimestamp + plan.period 
+            : sub.validUntil + plan.period; 
+        
+        subs[_subId].lastModifiedTimestamp = currentTimestamp;
+        subs[_subId].validUntil = newValidUntil;
+
+        // pay from msg.sender to to recipient
+        IERC20(plan.paymentToken).safeTransferFrom(msg.sender, plan.recipient, plan.price);
+
+        emit IRegistry.SubcriptionRenewed(sub.planId, _subId, msg.sender, plan.price, newValidUntil);
     }
 
     ///@dev in case you loose the record in projectUserMap, call this function to bind the id to the mapping.

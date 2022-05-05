@@ -31,22 +31,23 @@ contract TestContract is Test {
         address recipient = users[1];
         
         uint128 expectedId = registry.nextPlanId();
-
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
+        bool extendable = true;
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, extendable);
         assertEq(expectedId, planId);
 
-        (address _owner, address _recipiet, address token, uint40 _period, uint40 _lastModifiedTimestamp, uint128 _price) = registry.plans(planId);
+        (address _owner, address _recipiet, address token, uint40 _period, uint40 _lastModifiedTimestamp, uint128 _price, bool _extendable) = registry.plans(planId);
         assertEq(_owner, address(this));
         assertEq(_recipiet, recipient);
         assertEq(token, address(usdc));
         assertEq(_period, period);
         assertEq(_lastModifiedTimestamp, block.timestamp);
         assertEq(_price, price);
+        assertTrue(extendable == _extendable);
     }
 
     function testSubscribe() public {
         address recipient = users[1];
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
         address payable alice = users[2];
         usdc.mint(alice, price);
 
@@ -70,7 +71,7 @@ contract TestContract is Test {
         address payable alice = users[2];
         address payable bob = users[3];
 
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
         
         usdc.mint(alice, price);
 
@@ -92,7 +93,7 @@ contract TestContract is Test {
         address recipient = users[1];
         address payable alice = users[2];
         address payable bob = users[3];
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
         
         usdc.mint(alice, price * 2);
 
@@ -118,7 +119,7 @@ contract TestContract is Test {
 
         vm.expectRevert(Registry.IllegalRebind.selector);
         registry.rebind(1, bob);
-        
+
         // bob can rebind his ownership of the 2nd sub nft.
         registry.rebind(2, bob);
         (bobHasSub, ) = registry.hasValidSubscription(planId, bob);
