@@ -1,39 +1,37 @@
-# <h1 align="center"> Forge Template </h1>
+<div align="center">
+  <h1 align="center"> Dappscription</h1>
+  <h4 align="center"> Bring Subscription Services to Web3</h4>
+  <p align="center">
+    <!-- badge goes here -->
+  </p>
 
-**Template repository for getting started quickly with Foundry projects**
+<p align='center'>
+    <img src='https://i.imgur.com/kURIGos.jpg' alt='subscribe' width="500" />
+</p>  
+<h6 align="center"> Built with Foundry</h6>
+  
+</div>
 
-![Github Actions](https://github.com/foundry-rs/forge-template/workflows/CI/badge.svg)
+## Introduction
+
+Dappscription is a service for anyone to create subscription-based services for anyone else.
+
+Smart contracts are supposed to be immutable, but **services**, or products, are not. We believe that products that utilize smart contracts should keep iterating and provide the best services to the users, and we are here to provide the infra to make that easier for every devs to sustain their business, and focus on building.
+
+### I'm a Service Provider
+
+As a service provider (protocol, aggregators, frontend devs), you can register your project here with a simple `createProject` call with your plan detail.
+
+After registration, you can use our React component to easily distinguish if a connected wallet is a subscribed user or not, and choose to disable some advanced feature based on that.
+
+Dappscription, as permission-less contract, will not collect any fees, every penny goes to your wallet. You can automatically collect all your "revenue" on our management UI.
+### I'm a user
+
+You can use **Dappscription** to manage all your subscriptions to advanced services, make sure you don't pay more than what you're suppose to.
 
 ## Getting Started
 
-Click "Use this template" on [GitHub](https://github.com/foundry-rs/forge-template) to create a new repository with this repo as the initial state.
-
-Or, if your repo already exists, run:
-```sh
-forge init
+```shell
 forge build
 forge test
 ```
-
-## Writing your first test
-
-All you need is to `import forge-std/Test.sol` and then inherit it from your test contract. Forge-std's Test contract comes with a pre-instatiated [cheatcodes environment](https://book.getfoundry.sh/cheatcodes/), the `vm`. It also has support for [ds-test](https://book.getfoundry.sh/reference/ds-test.html)-style logs and assertions. Finally, it supports Hardhat's [console.log](https://github.com/brockelmore/forge-std/blob/master/src/console.sol). The logging functionalities require `-vvvv`.
-
-```solidity
-pragma solidity 0.8.10;
-
-import "forge-std/Test.sol";
-
-contract ContractTest is Test {
-    function testExample() public {
-        vm.roll(100);
-        console.log(1);
-        emit log("hi");
-        assertTrue(true);
-    }
-}
-```
-
-## Development
-
-This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
