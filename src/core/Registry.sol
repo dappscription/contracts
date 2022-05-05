@@ -11,6 +11,7 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
 
     error ProjectDoesNotExist();
     error AlreadySubscribed();
+    error IllegalRebind();
 
     using SafeERC20 for IERC20;
     
@@ -63,20 +64,20 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     }
 
     /// @inheritdoc IRegistry
-    function subscribe(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId) {
+    function subscribe(uint128 _planId, bool _autoRenew) external returns (uint256 subId) {
         IRegistry.Plan memory plan = plans[_planId];
         if (plan.owner == address(0)) revert ProjectDoesNotExist();
         if (projectUserMap[_planId][msg.sender] != 0) revert AlreadySubscribed();
 
-        tokenId = nextSubId;
+        subId = nextSubId;
 
         // set the mapping
-        projectUserMap[_planId][msg.sender] = tokenId;
+        projectUserMap[_planId][msg.sender] = subId;
 
         uint40 currentTimestamp = uint40(block.timestamp);
         uint40 validUntil = currentTimestamp + plan.period;
 
-        subs[tokenId] = IRegistry.Subscription({
+        subs[subId] = IRegistry.Subscription({
             planId: _planId,
             lastModifiedTimestamp: currentTimestamp,
             validUntil: validUntil,
@@ -89,9 +90,16 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
         IERC20(plan.paymentToken).safeTransferFrom(msg.sender, plan.recipient, plan.price);
 
         // mint receipt (NFT to user)
-        _mint(msg.sender, tokenId);
+        _mint(msg.sender, subId);
 
-        emit IRegistry.Subscribed(_planId, tokenId, msg.sender, validUntil, _autoRenew);
+        emit IRegistry.Subscribed(_planId, subId, msg.sender, validUntil, _autoRenew);
+    }
+
+    ///@dev in case you loose the record in projectUserMap, call this function to bind the id to the mapping.
+    function rebind(uint256 _subId, address _user) external {
+        if (_ownerOf[_subId] != _user) revert IllegalRebind();
+        IRegistry.Subscription memory sub = subs[_subId];
+        projectUserMap[sub.planId][_user] = _subId;
     }
 
     ///@dev overriding transferFrom to update `projectUserMap` mapping.

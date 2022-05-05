@@ -1,3 +1,4 @@
-TestContract:testCreate() (gas: 132607)
-TestContract:testIsValidSubscriptionAfterTransfer() (gas: 316030)
-TestContract:testSubscribe() (gas: 303041)
+TestContract:testCreate() (gas: 132652)
+TestContract:testIsValidSubscriptionAfterTransfer() (gas: 316096)
+TestContract:testRebindAfterOwningMultipleSubWithSamePlans() (gas: 451182)
+TestContract:testSubscribe() (gas: 303085)

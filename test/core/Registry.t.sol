@@ -87,6 +87,41 @@ contract TestContract is Test {
         assertTrue(bobHasSub);
     }
 
+    function testRebindAfterOwningMultipleSubWithSamePlans() public {
+        address recipient = users[1];
+        address payable alice = users[2];
+        address payable bob = users[3];
+        uint128 id = registry.createPlan(address(usdc), recipient, period, price);
+        
+        usdc.mint(alice, price * 2);
+
+        vm.startPrank(alice);
+        usdc.approve(address(registry), price * 2);
+        // make 2 subscription and transfer all to bob
+        for (uint i = 0; i < 2; i++) {
+            uint256 nftId = registry.subscribe(id, true);
+            registry.transferFrom(alice, bob, nftId);
+        }
+        vm.stopPrank();
+
+        // transfer first sub nft back to alice
+        vm.startPrank(bob);
+        registry.transferFrom(bob, alice, 1);
+
+        (bool aliceHasSub, ) = registry.hasValidSubscription(id, alice);
+        assertTrue(aliceHasSub);
+
+        // bob will loss his record of hasValidSubscription because of duplicate holding.
+        (bool bobHasSub, ) = registry.hasValidSubscription(id, bob);
+        assertTrue(!bobHasSub);
+
+        // bob can reannouceOwnership of the 2nd sub nft.
+        registry.rebind(2, bob);
+        (bobHasSub, ) = registry.hasValidSubscription(id, bob);
+        assertTrue(bobHasSub);
+        vm.stopPrank();
+    }
+
     function testCannotSubscribeNonExistantPlan(uint128 id) public {
         vm.expectRevert(Registry.ProjectDoesNotExist.selector);
         registry.subscribe(id, true);
