@@ -1,2 +1,3 @@
-TestContract:testCreate() (gas: 132651)
-TestContract:testSubscribe() (gas: 295721)
+TestContract:testCreate() (gas: 132607)
+TestContract:testIsValidSubscriptionAfterTransfer() (gas: 316030)
+TestContract:testSubscribe() (gas: 303041)
