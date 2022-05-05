@@ -36,7 +36,7 @@ contract TestContract is Test {
         (address _owner, address _recipiet, address token, uint40 _period, uint40 _lastModifiedTimestamp, uint128 _price) = registry.plans(id);
         assertEq(_owner, address(this));
         assertEq(_recipiet, recipient);
-        assertEq(address(usdc), token);
+        assertEq(token, address(usdc));
         assertEq(_period, period);
         assertEq(_lastModifiedTimestamp, block.timestamp);
         assertEq(_price, price);
@@ -53,8 +53,8 @@ contract TestContract is Test {
         vm.stopPrank();
     }
 
-    function testCannotSubscribeNonExistantPlan() internal {
+    function testCannotSubscribeNonExistantPlan(uint128 id) public {
         vm.expectRevert(Registry.ProjectDoesNotExist.selector);
-        registry.subscribe(0, true);
+        registry.subscribe(id, true);
     }
 }
