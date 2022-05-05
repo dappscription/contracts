@@ -65,6 +65,28 @@ contract TestContract is Test {
         assertEq(usdc.balanceOf(recipient), price);
     }
 
+    function testIsValidSubscriptionAfterTransfer() public {
+        address recipient = users[1];
+        address payable alice = users[2];
+        address payable bob = users[3];
+
+        uint128 id = registry.createPlan(address(usdc), recipient, period, price);
+        
+        usdc.mint(alice, price);
+
+        vm.startPrank(alice);
+        usdc.approve(address(registry), price);
+        uint256 nftId = registry.subscribe(id, true);
+        registry.transferFrom(alice, bob, nftId);
+        vm.stopPrank();
+
+        assertEq(registry.ownerOf(nftId), bob);
+        (bool aliceHasSub, ) = registry.hasValidSubscription(id, alice);
+        assertTrue(!aliceHasSub);
+        (bool bobHasSub, ) = registry.hasValidSubscription(id, bob);
+        assertTrue(bobHasSub);
+    }
+
     function testCannotSubscribeNonExistantPlan(uint128 id) public {
         vm.expectRevert(Registry.ProjectDoesNotExist.selector);
         registry.subscribe(id, true);

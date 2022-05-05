@@ -94,5 +94,17 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
         emit IRegistry.Subscribed(_planId, tokenId, msg.sender, validUntil, _autoRenew);
     }
 
+    ///@dev overriding transferFrom to update `projectUserMap` mapping.
+    function transferFrom(
+        address from,
+        address to,
+        uint256 id
+    ) public override {
+        super.transferFrom(from, to, id);
+        IRegistry.Subscription memory sub = subs[id];
+        delete projectUserMap[sub.planId][from];
+        projectUserMap[sub.planId][to] = id;
+    }
+
     
 }
