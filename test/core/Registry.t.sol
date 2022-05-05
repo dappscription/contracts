@@ -32,10 +32,10 @@ contract TestContract is Test {
         
         uint128 expectedId = registry.nextPlanId();
 
-        uint128 id = registry.createPlan(address(usdc), recipient, period, price);
-        assertEq(expectedId, id);
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
+        assertEq(expectedId, planId);
 
-        (address _owner, address _recipiet, address token, uint40 _period, uint40 _lastModifiedTimestamp, uint128 _price) = registry.plans(id);
+        (address _owner, address _recipiet, address token, uint40 _period, uint40 _lastModifiedTimestamp, uint128 _price) = registry.plans(planId);
         assertEq(_owner, address(this));
         assertEq(_recipiet, recipient);
         assertEq(token, address(usdc));
@@ -46,19 +46,19 @@ contract TestContract is Test {
 
     function testSubscribe() public {
         address recipient = users[1];
-        uint128 id = registry.createPlan(address(usdc), recipient, period, price);
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
         address payable alice = users[2];
         usdc.mint(alice, price);
 
         vm.startPrank(alice);
         usdc.approve(address(registry), price);
-        uint256 nftId = registry.subscribe(id, true);
+        uint256 nftId = registry.subscribe(planId, true);
         vm.stopPrank();
 
         assertEq(registry.ownerOf(nftId), alice);
-        (bool hasSub, uint256 _id) = registry.hasValidSubscription(id, alice);
+        (bool hasSub, uint256 _subId) = registry.hasValidSubscription(planId, alice);
         assertTrue(hasSub);
-        assertEq(_id, nftId);
+        assertEq(_subId, nftId);
 
         // assert transfer has been made
         assertEq(usdc.balanceOf(alice), 0);
@@ -70,28 +70,29 @@ contract TestContract is Test {
         address payable alice = users[2];
         address payable bob = users[3];
 
-        uint128 id = registry.createPlan(address(usdc), recipient, period, price);
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
         
         usdc.mint(alice, price);
 
         vm.startPrank(alice);
         usdc.approve(address(registry), price);
-        uint256 nftId = registry.subscribe(id, true);
+        uint256 nftId = registry.subscribe(planId, true);
         registry.transferFrom(alice, bob, nftId);
         vm.stopPrank();
 
         assertEq(registry.ownerOf(nftId), bob);
-        (bool aliceHasSub, ) = registry.hasValidSubscription(id, alice);
+        (bool aliceHasSub, ) = registry.hasValidSubscription(planId, alice);
         assertTrue(!aliceHasSub);
-        (bool bobHasSub, ) = registry.hasValidSubscription(id, bob);
+        (bool bobHasSub, ) = registry.hasValidSubscription(planId, bob);
         assertTrue(bobHasSub);
     }
 
-    function testRebindAfterOwningMultipleSubWithSamePlans() public {
+    // test that we can rebind a nft ownership after owning duplicated subscription plans
+    function testRebind() public {
         address recipient = users[1];
         address payable alice = users[2];
         address payable bob = users[3];
-        uint128 id = registry.createPlan(address(usdc), recipient, period, price);
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price);
         
         usdc.mint(alice, price * 2);
 
@@ -99,7 +100,7 @@ contract TestContract is Test {
         usdc.approve(address(registry), price * 2);
         // make 2 subscription and transfer all to bob
         for (uint i = 0; i < 2; i++) {
-            uint256 nftId = registry.subscribe(id, true);
+            uint256 nftId = registry.subscribe(planId, true);
             registry.transferFrom(alice, bob, nftId);
         }
         vm.stopPrank();
@@ -108,17 +109,22 @@ contract TestContract is Test {
         vm.startPrank(bob);
         registry.transferFrom(bob, alice, 1);
 
-        (bool aliceHasSub, ) = registry.hasValidSubscription(id, alice);
+        (bool aliceHasSub, ) = registry.hasValidSubscription(planId, alice);
         assertTrue(aliceHasSub);
 
         // bob will loss his record of hasValidSubscription because of duplicate holding.
-        (bool bobHasSub, ) = registry.hasValidSubscription(id, bob);
+        (bool bobHasSub, ) = registry.hasValidSubscription(planId, bob);
         assertTrue(!bobHasSub);
 
-        // bob can reannouceOwnership of the 2nd sub nft.
+        vm.expectRevert(Registry.IllegalRebind.selector);
+        registry.rebind(1, bob);
+        
+        // bob can rebind his ownership of the 2nd sub nft.
         registry.rebind(2, bob);
-        (bobHasSub, ) = registry.hasValidSubscription(id, bob);
+        (bobHasSub, ) = registry.hasValidSubscription(planId, bob);
         assertTrue(bobHasSub);
+
+
         vm.stopPrank();
     }
 
