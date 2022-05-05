@@ -10,6 +10,7 @@ import "./RegistryNFT.sol";
 contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
 
     error ProjectDoesNotExist();
+    error AlreadySubscribed();
 
     using SafeERC20 for IERC20;
     
@@ -17,13 +18,27 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     uint128 public nextPlanId;
     
     ///@dev next subscription id
-    uint256 public nextSubId;
+    uint256 public nextSubId = 1;
     
     ///@dev planId => Plan struct
     mapping(uint128 => IRegistry.Plan) public plans;
 
-    ///@dev subscriptions
+    ///@dev token id to subscription detail
     mapping(uint256 => IRegistry.Subscription) public subs ;
+
+    ///@dev planId => user => subscription. Make sure we can easily look-up if a user has existing subscription.
+    ///     this mapping might be clear if you transfer nft to an address that already has a sub to the project, and then transfer them out again
+    ///     in this case, you can use `rebind` to set the mapping.
+    mapping(uint128 => mapping(address => uint256)) projectUserMap;
+
+    /// @inheritdoc IRegistry
+    function hasValidSubscription(uint128 _planId, address _user) external view returns (bool _valid, uint256 _subId) {
+        _subId = projectUserMap[_planId][_user];
+        if (_subId == 0) return (false, 0);
+
+        uint256 deadline = subs[_subId].validUntil;
+        return (deadline > block.timestamp, _subId);
+    }
 
     /// @inheritdoc IRegistry
     function createPlan(
@@ -51,7 +66,12 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     function subscribe(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId) {
         IRegistry.Plan memory plan = plans[_planId];
         if (plan.owner == address(0)) revert ProjectDoesNotExist();
+        if (projectUserMap[_planId][msg.sender] != 0) revert AlreadySubscribed();
+
         tokenId = nextSubId;
+
+        // set the mapping
+        projectUserMap[_planId][msg.sender] = tokenId;
 
         uint40 currentTimestamp = uint40(block.timestamp);
         uint40 validUntil = currentTimestamp + plan.period;
@@ -73,4 +93,6 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
 
         emit IRegistry.Subscribed(_planId, tokenId, msg.sender, validUntil, _autoRenew);
     }
+
+    
 }

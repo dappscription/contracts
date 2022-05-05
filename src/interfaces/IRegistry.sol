@@ -37,6 +37,9 @@ interface IRegistry {
     bool allowAutoRenew;
   }
 
+  /// @notice return true if an user address has a valid subscription to a planId
+  function hasValidSubscription(uint128 _planId, address _user) external returns (bool _valid, uint256 _subId);
+
   /// @notice create a new plan 
   function createPlan(address _paymentToken, address _recipient, uint40 _period, uint128 _price) external returns (uint128 planId);
 

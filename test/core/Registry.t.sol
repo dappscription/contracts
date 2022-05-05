@@ -56,6 +56,9 @@ contract TestContract is Test {
         vm.stopPrank();
 
         assertEq(registry.ownerOf(nftId), alice);
+        (bool hasSub, uint256 _id) = registry.hasValidSubscription(id, alice);
+        assertTrue(hasSub);
+        assertEq(_id, nftId);
 
         // assert transfer has been made
         assertEq(usdc.balanceOf(alice), 0);
