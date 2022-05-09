@@ -2,14 +2,13 @@
 pragma solidity ^0.8.13;
 
 interface IRegistry {
-
-  error Subscription_Ongoing();
-
   event PlanCreated(uint128 planId, address owner, address token, uint40 period, uint128 price);
 
   event Subscribed(uint128 planId, uint256 subscriptionId, address subscriber, uint128 price, uint40 validUntil, bool allowAutoRenew);
 
-  event SubcriptionRenewed(uint256 planId, uint256 subscriptionId, address payer, uint128 price, uint40 validUntil);
+  event SubscriptionUpdated(uint256 subscriptionId, bool allowAutoRenew);
+
+  event SubscriptionRenewed(uint256 subscriptionId, address payer, uint128 price, uint40 validUntil);
 
   ///@dev any projects can register new plans for people to subscribe
   struct Plan {
@@ -58,7 +57,7 @@ interface IRegistry {
   function renew(uint256 _subId) external;
 
   // /// @notice user can update auto renew preference. Disabling it is consiered "unsubscribed".
-  // function updateSubscription(uint128 _planId, bool _autoRenew) external returns (uint256 tokenId);
+  function updateSubscription(uint256 _subId, bool _autoRenew) external;
 
   // /// @dev renew a subscription for a user.
   // function renewFor(address _user, uint128 _planId) external;

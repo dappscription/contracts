@@ -9,6 +9,7 @@ import "./RegistryNFT.sol";
 
 contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
 
+    error NotAuthorized();
     error ProjectDoesNotExist();
     error AlreadySubscribed();
     error SubscriptionNotExpired();
@@ -99,6 +100,15 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     }
 
     /// @inheritdoc IRegistry
+    function updateSubscription(uint256 _subId, bool _autoRenew) external {
+        if (ownerOf(_subId) != msg.sender) revert NotAuthorized();
+        IRegistry.Subscription storage sub = subs[_subId];
+        sub.allowAutoRenew = _autoRenew;
+
+        emit IRegistry.SubscriptionUpdated(_subId, _autoRenew);
+    }
+
+    /// @inheritdoc IRegistry
     function renew(uint256 _subId) external {
         IRegistry.Subscription memory sub = subs[_subId];
         IRegistry.Plan memory plan = plans[sub.planId];
@@ -116,7 +126,7 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
         // pay from msg.sender to to recipient
         IERC20(plan.paymentToken).safeTransferFrom(msg.sender, plan.recipient, plan.price);
 
-        emit IRegistry.SubcriptionRenewed(sub.planId, _subId, msg.sender, plan.price, newValidUntil);
+        emit IRegistry.SubscriptionRenewed(_subId, msg.sender, plan.price, newValidUntil);
     }
 
     ///@dev in case you loose the record in projectUserMap, call this function to bind the id to the mapping.
