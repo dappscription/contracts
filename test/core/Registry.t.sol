@@ -53,17 +53,39 @@ contract TestContract is Test {
 
         vm.startPrank(alice);
         usdc.approve(address(registry), price);
-        uint256 nftId = registry.subscribe(planId, true);
+        uint256 subId = registry.subscribe(planId, true);
         vm.stopPrank();
 
-        assertEq(registry.ownerOf(nftId), alice);
+        assertEq(registry.ownerOf(subId), alice);
         (bool hasSub, uint256 _subId) = registry.hasValidSubscription(planId, alice);
         assertTrue(hasSub);
-        assertEq(_subId, nftId);
+        assertEq(_subId, subId);
 
         // assert transfer has been made
         assertEq(usdc.balanceOf(alice), 0);
         assertEq(usdc.balanceOf(recipient), price);
+    }
+
+    function testUpdateSubscription() public {
+        address recipient = users[1];
+        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
+        address payable alice = users[2];
+        usdc.mint(alice, price);
+
+        vm.startPrank(alice);
+        usdc.approve(address(registry), price);
+        uint256 subId = registry.subscribe(planId, true);
+        (,,,bool allowAutoRenew) = registry.subs(subId);
+        assertTrue(allowAutoRenew);
+        
+        registry.updateSubscription(subId, false);
+        (,,,allowAutoRenew) = registry.subs(subId);
+        assertTrue(!allowAutoRenew);
+        vm.stopPrank();
+
+        // test cannot call updateSubscription with non-owner
+        vm.expectRevert(Registry.NotAuthorized.selector);
+        registry.updateSubscription(subId, true);
     }
 
     function testIsValidSubscriptionAfterTransfer() public {
@@ -77,11 +99,11 @@ contract TestContract is Test {
 
         vm.startPrank(alice);
         usdc.approve(address(registry), price);
-        uint256 nftId = registry.subscribe(planId, true);
-        registry.transferFrom(alice, bob, nftId);
+        uint256 subId = registry.subscribe(planId, true);
+        registry.transferFrom(alice, bob, subId);
         vm.stopPrank();
 
-        assertEq(registry.ownerOf(nftId), bob);
+        assertEq(registry.ownerOf(subId), bob);
         (bool aliceHasSub, ) = registry.hasValidSubscription(planId, alice);
         assertTrue(!aliceHasSub);
         (bool bobHasSub, ) = registry.hasValidSubscription(planId, bob);
@@ -101,8 +123,8 @@ contract TestContract is Test {
         usdc.approve(address(registry), price * 2);
         // make 2 subscription and transfer all to bob
         for (uint i = 0; i < 2; i++) {
-            uint256 nftId = registry.subscribe(planId, true);
-            registry.transferFrom(alice, bob, nftId);
+            uint256 subId = registry.subscribe(planId, true);
+            registry.transferFrom(alice, bob, subId);
         }
         vm.stopPrank();
 
@@ -140,11 +162,11 @@ contract TestContract is Test {
 
         vm.startPrank(alice);
         usdc.approve(address(registry), price * 2);
-        uint256 nftId = registry.subscribe(planId, true);
-        (,,uint256 validUntilBefore,) = registry.subs(nftId);
+        uint256 subId = registry.subscribe(planId, true);
+        (,,uint256 validUntilBefore,) = registry.subs(subId);
 
-        registry.renew(nftId);
-        (,,uint256 validUntilAfter,) = registry.subs(nftId);
+        registry.renew(subId);
+        (,,uint256 validUntilAfter,) = registry.subs(subId);
         assertEq(validUntilAfter - validUntilBefore, period);
         vm.stopPrank();
     }
@@ -160,16 +182,16 @@ contract TestContract is Test {
 
         vm.startPrank(alice);
         usdc.approve(address(registry), price * 2);
-        uint256 nftId = registry.subscribe(planId, true);
-        (,,uint256 deadline,) = registry.subs(nftId);
+        uint256 subId = registry.subscribe(planId, true);
+        (,,uint256 deadline,) = registry.subs(subId);
 
         vm.expectRevert(Registry.SubscriptionNotExpired.selector);
-        registry.renew(nftId);
+        registry.renew(subId);
         
         // set time to expiration
         vm.warp(deadline);
-        registry.renew(nftId);
-        (,,uint256 newDeadline,) = registry.subs(nftId);
+        registry.renew(subId);
+        (,,uint256 newDeadline,) = registry.subs(subId);
         assertEq(newDeadline, block.timestamp + period);
         vm.stopPrank();
     }
