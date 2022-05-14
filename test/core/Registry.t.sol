@@ -5,13 +5,11 @@ import "src/interfaces/IRegistry.sol";
 import "forge-std/Test.sol";
 import "src/core/Registry.sol";
 
-import {MintableERC20} from "../utils/MintableERC20.sol";
 import {Utilities} from "../utils/Utilities.sol";
+import {Fixture} from "../shared/Fixture.t.sol";
 
-
-contract TestContract is Test {
-    Registry registry;
-    MintableERC20 usdc;
+contract TestContract is Fixture {
+    // Registry registry;
 
     Utilities internal utils;
     address payable[] internal users;
@@ -20,24 +18,22 @@ contract TestContract is Test {
     uint40 period = 90 days;
 
     function setUp() public {
-        utils = new Utilities();
-        users = utils.createUsers(5);
+        // utils = new Utilities();
+        // users = utils.createUsers(5);
 
         registry = new Registry();
-        usdc = new MintableERC20();
+        // usdc = new MintableERC20();
     }
 
-    function testCreate() public {
-        address recipient = users[1];
-        
+    function testCreate() public {        
         uint128 expectedId = registry.nextPlanId();
         bool extendable = true;
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, extendable);
+        uint128 planId = registry.createPlan(address(usdc), alice, period, price, extendable);
         assertEq(expectedId, planId);
 
         (address _owner, address _recipiet, address token, uint40 _period, uint40 _lastModifiedTimestamp, uint128 _price, bool _extendable) = registry.plans(planId);
         assertEq(_owner, address(this));
-        assertEq(_recipiet, recipient);
+        assertEq(_recipiet, alice);
         assertEq(token, address(usdc));
         assertEq(_period, period);
         assertEq(_lastModifiedTimestamp, block.timestamp);
@@ -46,33 +42,29 @@ contract TestContract is Test {
     }
 
     function testSubscribe() public {
-        address recipient = users[1];
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
-        address payable alice = users[2];
-        usdc.mint(alice, price);
+        uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
+        usdc.mint(babe, price);
 
-        vm.startPrank(alice);
+        vm.startPrank(babe);
         usdc.approve(address(registry), price);
         uint256 subId = registry.subscribe(planId, true);
         vm.stopPrank();
 
-        assertEq(registry.ownerOf(subId), alice);
-        (bool hasSub, uint256 _subId) = registry.hasValidSubscription(planId, alice);
+        assertEq(registry.ownerOf(subId), babe);
+        (bool hasSub, uint256 _subId) = registry.hasValidSubscription(planId, babe);
         assertTrue(hasSub);
         assertEq(_subId, subId);
 
         // assert transfer has been made
-        assertEq(usdc.balanceOf(alice), 0);
-        assertEq(usdc.balanceOf(recipient), price);
+        assertEq(usdc.balanceOf(babe), 0);
+        assertEq(usdc.balanceOf(alice), price);
     }
 
     function testUpdateSubscription() public {
-        address recipient = users[1];
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
-        address payable alice = users[2];
-        usdc.mint(alice, price);
+        uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
+        usdc.mint(babe, price);
 
-        vm.startPrank(alice);
+        vm.startPrank(babe);
         usdc.approve(address(registry), price);
         uint256 subId = registry.subscribe(planId, true);
         (,,,bool allowAutoRenew) = registry.subs(subId);
@@ -89,51 +81,44 @@ contract TestContract is Test {
     }
 
     function testIsValidSubscriptionAfterTransfer() public {
-        address recipient = users[1];
-        address payable alice = users[2];
-        address payable bob = users[3];
-
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
+        uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
         
-        usdc.mint(alice, price);
+        usdc.mint(babe, price);
 
-        vm.startPrank(alice);
+        vm.startPrank(babe);
         usdc.approve(address(registry), price);
         uint256 subId = registry.subscribe(planId, true);
-        registry.transferFrom(alice, bob, subId);
+        registry.transferFrom(babe, bob, subId);
         vm.stopPrank();
 
         assertEq(registry.ownerOf(subId), bob);
-        (bool aliceHasSub, ) = registry.hasValidSubscription(planId, alice);
-        assertTrue(!aliceHasSub);
+        (bool babeHasSub, ) = registry.hasValidSubscription(planId, babe);
+        assertTrue(!babeHasSub);
         (bool bobHasSub, ) = registry.hasValidSubscription(planId, bob);
         assertTrue(bobHasSub);
     }
 
     // test that we can rebind a nft ownership after owning duplicated subscription plans
     function testRebind() public {
-        address recipient = users[1];
-        address payable alice = users[2];
-        address payable bob = users[3];
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, false);
+        uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
         
-        usdc.mint(alice, price * 2);
+        usdc.mint(babe, price * 2);
 
-        vm.startPrank(alice);
+        vm.startPrank(babe);
         usdc.approve(address(registry), price * 2);
         // make 2 subscription and transfer all to bob
         for (uint i = 0; i < 2; i++) {
             uint256 subId = registry.subscribe(planId, true);
-            registry.transferFrom(alice, bob, subId);
+            registry.transferFrom(babe, bob, subId);
         }
         vm.stopPrank();
 
-        // transfer first sub nft back to alice
+        // transfer first sub nft back to babe
         vm.startPrank(bob);
-        registry.transferFrom(bob, alice, 1);
+        registry.transferFrom(bob, babe, 1);
 
-        (bool aliceHasSub, ) = registry.hasValidSubscription(planId, alice);
-        assertTrue(aliceHasSub);
+        (bool babeHasSub, ) = registry.hasValidSubscription(planId, babe);
+        assertTrue(babeHasSub);
 
         // bob will loss his record of hasValidSubscription because of duplicate holding.
         (bool bobHasSub, ) = registry.hasValidSubscription(planId, bob);
@@ -153,14 +138,12 @@ contract TestContract is Test {
 
     // test that we can extend our subscription before expires
     function testRenewExtendable() public {
-        address recipient = users[1];
         bool extendable = true;
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, extendable);
-        address payable alice = users[2];
+        uint128 planId = registry.createPlan(address(usdc), alice, period, price, extendable);
         // mint 2x price because we want to renew
-        usdc.mint(alice, price * 2);
+        usdc.mint(babe, price * 2);
 
-        vm.startPrank(alice);
+        vm.startPrank(babe);
         usdc.approve(address(registry), price * 2);
         uint256 subId = registry.subscribe(planId, true);
         (,,uint256 validUntilBefore,) = registry.subs(subId);
@@ -173,14 +156,12 @@ contract TestContract is Test {
 
     // test that we can extend our subscription after expires
     function testRenewNotExtendable() public {
-        address recipient = users[1];
         bool extendable = false;
-        uint128 planId = registry.createPlan(address(usdc), recipient, period, price, extendable);
-        address payable alice = users[2];
+        uint128 planId = registry.createPlan(address(usdc), alice, period, price, extendable);
         // mint 2x price because we want to renew
-        usdc.mint(alice, price * 2);
+        usdc.mint(babe, price * 2);
 
-        vm.startPrank(alice);
+        vm.startPrank(babe);
         usdc.approve(address(registry), price * 2);
         uint256 subId = registry.subscribe(planId, true);
         (,,uint256 deadline,) = registry.subs(subId);
