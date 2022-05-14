@@ -20,24 +20,6 @@ contract TestContract is Fixture {
     function setUp() public {
     }
 
-    function testIsValidSubscriptionAfterTransfer() public {
-        uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
-        
-        usdc.mint(babe, price);
-
-        vm.startPrank(babe);
-        usdc.approve(address(registry), price);
-        uint256 subId = registry.subscribe(planId, true);
-        registry.transferFrom(babe, bob, subId);
-        vm.stopPrank();
-
-        assertEq(registry.ownerOf(subId), bob);
-        (bool babeHasSub, ) = registry.hasValidSubscription(planId, babe);
-        assertTrue(!babeHasSub);
-        (bool bobHasSub, ) = registry.hasValidSubscription(planId, bob);
-        assertTrue(bobHasSub);
-    }
-
     // test that we can rebind a nft ownership after owning duplicated subscription plans
     function testRebind() public {
         uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);

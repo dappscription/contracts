@@ -146,7 +146,5 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
         IRegistry.Subscription memory sub = subs[id];
         delete projectUserMap[sub.planId][from];
         projectUserMap[sub.planId][to] = id;
-    }
-
-    
+    }   
 }
