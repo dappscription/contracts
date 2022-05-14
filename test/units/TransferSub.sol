@@ -6,7 +6,7 @@ import "src/core/Registry.sol";
 import {Utilities} from "../utils/Utilities.sol";
 import {Fixture} from "../shared/Fixture.t.sol";
 
-contract TestUpdateSubscription is Fixture {
+contract TestTransferSub is Fixture {
 
     uint128 price = 100e6;
     uint40 period = 90 days;

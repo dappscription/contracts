@@ -57,45 +57,4 @@ contract TestContract is Fixture {
 
         vm.stopPrank();
     }
-
-    // test that we can extend our subscription before expires
-    function testRenewExtendable() public {
-        bool extendable = true;
-        uint128 planId = registry.createPlan(address(usdc), alice, period, price, extendable);
-        // mint 2x price because we want to renew
-        usdc.mint(babe, price * 2);
-
-        vm.startPrank(babe);
-        usdc.approve(address(registry), price * 2);
-        uint256 subId = registry.subscribe(planId, true);
-        (,,uint256 validUntilBefore,) = registry.subs(subId);
-
-        registry.renew(subId);
-        (,,uint256 validUntilAfter,) = registry.subs(subId);
-        assertEq(validUntilAfter - validUntilBefore, period);
-        vm.stopPrank();
-    }
-
-    // test that we can extend our subscription after expires
-    function testRenewNotExtendable() public {
-        bool extendable = false;
-        uint128 planId = registry.createPlan(address(usdc), alice, period, price, extendable);
-        // mint 2x price because we want to renew
-        usdc.mint(babe, price * 2);
-
-        vm.startPrank(babe);
-        usdc.approve(address(registry), price * 2);
-        uint256 subId = registry.subscribe(planId, true);
-        (,,uint256 deadline,) = registry.subs(subId);
-
-        vm.expectRevert(Registry.SubscriptionNotExpired.selector);
-        registry.renew(subId);
-        
-        // set time to expiration
-        vm.warp(deadline);
-        registry.renew(subId);
-        (,,uint256 newDeadline,) = registry.subs(subId);
-        assertEq(newDeadline, block.timestamp + period);
-        vm.stopPrank();
-    }
 }
