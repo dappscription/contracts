@@ -20,45 +20,6 @@ contract TestContract is Fixture {
     function setUp() public {
     }
 
-    function testSubscribe() public {
-        uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
-        usdc.mint(babe, price);
-
-        vm.startPrank(babe);
-        usdc.approve(address(registry), price);
-        uint256 subId = registry.subscribe(planId, true);
-        vm.stopPrank();
-
-        assertEq(registry.ownerOf(subId), babe);
-        (bool hasSub, uint256 _subId) = registry.hasValidSubscription(planId, babe);
-        assertTrue(hasSub);
-        assertEq(_subId, subId);
-
-        // assert transfer has been made
-        assertEq(usdc.balanceOf(babe), 0);
-        assertEq(usdc.balanceOf(alice), price);
-    }
-
-    function testUpdateSubscription() public {
-        uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
-        usdc.mint(babe, price);
-
-        vm.startPrank(babe);
-        usdc.approve(address(registry), price);
-        uint256 subId = registry.subscribe(planId, true);
-        (,,,bool allowAutoRenew) = registry.subs(subId);
-        assertTrue(allowAutoRenew);
-        
-        registry.updateSubscription(subId, false);
-        (,,,allowAutoRenew) = registry.subs(subId);
-        assertTrue(!allowAutoRenew);
-        vm.stopPrank();
-
-        // test cannot call updateSubscription with non-owner
-        vm.expectRevert(Registry.NotAuthorized.selector);
-        registry.updateSubscription(subId, true);
-    }
-
     function testIsValidSubscriptionAfterTransfer() public {
         uint128 planId = registry.createPlan(address(usdc), alice, period, price, false);
         
@@ -154,10 +115,5 @@ contract TestContract is Fixture {
         (,,uint256 newDeadline,) = registry.subs(subId);
         assertEq(newDeadline, block.timestamp + period);
         vm.stopPrank();
-    }
-
-    function testCannotSubscribeNonExistantPlan(uint128 id) public {
-        vm.expectRevert(Registry.ProjectDoesNotExist.selector);
-        registry.subscribe(id, true);
     }
 }
