@@ -18,27 +18,6 @@ contract TestContract is Fixture {
     uint40 period = 90 days;
 
     function setUp() public {
-        // utils = new Utilities();
-        // users = utils.createUsers(5);
-
-        registry = new Registry();
-        // usdc = new MintableERC20();
-    }
-
-    function testCreate() public {        
-        uint128 expectedId = registry.nextPlanId();
-        bool extendable = true;
-        uint128 planId = registry.createPlan(address(usdc), alice, period, price, extendable);
-        assertEq(expectedId, planId);
-
-        (address _owner, address _recipiet, address token, uint40 _period, uint40 _lastModifiedTimestamp, uint128 _price, bool _extendable) = registry.plans(planId);
-        assertEq(_owner, address(this));
-        assertEq(_recipiet, alice);
-        assertEq(token, address(usdc));
-        assertEq(_period, period);
-        assertEq(_lastModifiedTimestamp, block.timestamp);
-        assertEq(_price, price);
-        assertTrue(extendable == _extendable);
     }
 
     function testSubscribe() public {
