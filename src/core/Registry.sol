@@ -32,11 +32,11 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     ///@dev planId => user => subscription. Make sure we can easily look-up if a user has existing subscription.
     ///     this mapping might be clear if you transfer nft to an address that already has a sub to the project, and then transfer them out again
     ///     in this case, you can use `rebind` to set the mapping.
-    mapping(uint128 => mapping(address => uint256)) projectUserMap;
+    mapping(uint128 => mapping(address => uint256)) planUserMap;
 
     /// @inheritdoc IRegistry
     function hasValidSubscription(uint128 _planId, address _user) external view returns (bool _valid, uint256 _subId) {
-        _subId = projectUserMap[_planId][_user];
+        _subId = planUserMap[_planId][_user];
         if (_subId == 0) return (false, 0);
 
         uint256 deadline = subs[_subId].validUntil;
@@ -71,12 +71,12 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     function subscribe(uint128 _planId, bool _autoRenew) external returns (uint256 subId) {
         IRegistry.Plan memory plan = plans[_planId];
         if (plan.owner == address(0)) revert ProjectDoesNotExist();
-        if (projectUserMap[_planId][msg.sender] != 0) revert AlreadySubscribed();
+        if (planUserMap[_planId][msg.sender] != 0) revert AlreadySubscribed();
 
         subId = nextSubId;
 
         // set the mapping
-        projectUserMap[_planId][msg.sender] = subId;
+        planUserMap[_planId][msg.sender] = subId;
 
         uint40 currentTimestamp = uint40(block.timestamp);
         uint40 validUntil = currentTimestamp + plan.period;
@@ -129,14 +129,7 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
         emit IRegistry.SubscriptionRenewed(_subId, msg.sender, plan.price, newValidUntil);
     }
 
-    ///@dev in case you loose the record in projectUserMap, call this function to bind the id to the mapping.
-    function rebind(uint256 _subId, address _user) external {
-        if (_ownerOf[_subId] != _user) revert IllegalRebind();
-        IRegistry.Subscription memory sub = subs[_subId];
-        projectUserMap[sub.planId][_user] = _subId;
-    }
-
-    ///@dev overriding transferFrom to update `projectUserMap` mapping.
+    ///@dev overriding transferFrom to update `planUserMap` mapping.
     function transferFrom(
         address from,
         address to,
@@ -144,7 +137,8 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     ) public override {
         super.transferFrom(from, to, id);
         IRegistry.Subscription memory sub = subs[id];
-        delete projectUserMap[sub.planId][from];
-        projectUserMap[sub.planId][to] = id;
+        if(planUserMap[sub.planId][to] != 0) revert AlreadySubscribed();
+        delete planUserMap[sub.planId][from];
+        planUserMap[sub.planId][to] = id;
     }   
 }

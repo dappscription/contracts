@@ -23,25 +23,36 @@ contract TestTransferSub is Fixture {
             price,
             false
         );
-        usdc.mint(address(this), price);
-        usdc.approve(address(registry), price);
+        usdc.mint(address(this), price * 2);
+        usdc.approve(address(registry), price * 2);
 
         subId = registry.subscribe(planId, true);
     }
 
     function testSubTransferable() public {
+        // act
         registry.transferFrom(address(this), bob, subId);
-
+        // assert
         assertEq(registry.ownerOf(subId), bob);
     }
 
     function testSubTransferChangeIsValidSubOutput() public {
         // act
         registry.transferFrom(address(this), bob, subId);
-
+        // assert
         (bool hasSub, ) = registry.hasValidSubscription(planId, address(this));
         assertTrue(!hasSub);
         (bool bobHasSub, ) = registry.hasValidSubscription(planId, bob);
         assertTrue(bobHasSub);
+    }
+
+    function testCannotOwnTwoSub() public {
+        // arrange
+        registry.transferFrom(address(this), bob, subId);
+        uint256 sub2Id = registry.subscribe(planId, true);
+
+        // act
+        vm.expectRevert(Registry.AlreadySubscribed.selector);
+        registry.transferFrom(address(this), bob, sub2Id);
     }
 }
