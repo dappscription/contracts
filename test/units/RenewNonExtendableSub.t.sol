@@ -3,15 +3,9 @@ pragma solidity ^0.8.13;
 
 import "src/core/Registry.sol";
 
-import {Utilities} from "../utils/Utilities.sol";
 import {Fixture} from "../shared/Fixture.t.sol";
 
 contract TestRenewNonExtendableSub is Fixture {
-
-    uint128 price = 100e6;
-    uint40 period = 90 days;
-    bool extendable = false;
-
     uint128 planId;
     uint256 subId;
     
@@ -21,7 +15,7 @@ contract TestRenewNonExtendableSub is Fixture {
             alice,
             period,
             price,
-            extendable
+            false // non extendable plan
         );
 
         usdc.mint(address(this), price * 2);

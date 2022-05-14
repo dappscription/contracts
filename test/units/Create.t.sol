@@ -12,10 +12,6 @@ contract TestCreate is Fixture {
 
     event PlanCreated(uint128 planId, address owner, address token, uint40 period, uint128 price);
 
-    uint128 price = 100e6;
-    uint40 period = 90 days;
-    bool extendable = true;
-
     function testCreateIncreaseId() public {        
         uint128 expectedId = registry.nextPlanId();
         uint128 planId = registry.createPlan(address(usdc), alice, period, price, extendable);

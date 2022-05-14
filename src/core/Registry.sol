@@ -13,7 +13,6 @@ contract Registry is IRegistry, RegistryNFT, ReentrancyGuard{
     error ProjectDoesNotExist();
     error AlreadySubscribed();
     error SubscriptionNotExpired();
-    error IllegalRebind();
 
     using SafeERC20 for IERC20;
     

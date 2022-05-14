@@ -8,10 +8,6 @@ import {Fixture} from "../shared/Fixture.t.sol";
 
 contract TestTransferSub is Fixture {
 
-    uint128 price = 100e6;
-    uint40 period = 90 days;
-    bool extendable = true;
-
     uint128 planId;
     uint256 subId;
 

@@ -8,12 +8,6 @@ import {Fixture} from "../shared/Fixture.t.sol";
 
 contract TestUpdateSubscription is Fixture {
 
-    event PlanCreated(uint128 planId, address owner, address token, uint40 period, uint128 price);
-
-    uint128 price = 100e6;
-    uint40 period = 90 days;
-    bool extendable = true;
-
     uint128 planId;
     uint256 subId;
 

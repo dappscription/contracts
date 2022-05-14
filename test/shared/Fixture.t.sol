@@ -15,6 +15,11 @@ abstract contract Fixture is Test {
     address internal alice;
     address internal babe;
     address internal bob;
+
+    // defaut plan
+    uint128 price = 100e6;
+    uint40 period = 90 days;
+    bool extendable = true;
     
     constructor() {
         usdc = new MockERC20("USDC", "USDC", 6);
